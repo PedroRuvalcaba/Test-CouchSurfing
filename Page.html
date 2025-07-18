@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>User Management</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; }
+    .hidden { display: none; }
+    .tabs button { margin-right: 10px; }
+    .container { max-width: 800px; margin: auto; }
+    .form-group { margin-bottom: 10px; }
+    table, th, td { border: 1px solid #ccc; border-collapse: collapse; padding: 5px; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <!-- Login -->
+  <div id="loginView">
+    <h2>Login</h2>
+    <input type="text" id="username" placeholder="User">
+    <input type="password" id="password" placeholder="Password">
+    <button onclick="login()">Login</button>
+    <p id="loginError" style="color: red;"></p>
+  </div>
+
+  <!-- Main Panel -->
+  <div id="mainView" class="hidden">
+    <div class="tabs">
+      <button onclick="showTab('users')">Users</button>
+      <button onclick="showTab('roles')">Roles and permissions</button>
+    </div>
+
+    <!-- Users -->
+    <div id="tab-users">
+      <h2>Create user</h2>
+      <div class="form-group">
+        <input type="text" id="newUserName" placeholder="Username">
+        <button onclick="createUser()">Create</button>
+      </div>
+
+      <h3>Users created</h3>
+      <table>
+        <thead><tr><th>Name</th><th>Assigned roles</th></tr></thead>
+        <tbody id="usersTable"></tbody>
+      </table>
+
+      <h3>Assign role</h3>
+      <div>
+        <select id="userSelect"></select>
+        <select id="roleSelect"></select>
+        <button onclick="assignRole()">Assign role</button>
+      </div>
+    </div>
+
+    <!-- Roles -->
+    <div id="tab-roles" class="hidden">
+      <h2>Create rol</h2>
+      <div class="form-group">
+        <input type="text" id="newRoleName" placeholder="Role name">
+        <button onclick="createRole()">Create</button>
+      </div>
+
+      <h3>Roles created</h3>
+      <ul id="rolesList"></ul>
+    </div>
+  </div>
+</div>
+
+<script>
+  let users = [];
+  let roles = [];
+
+  function login() {
+    const user = document.getElementById('username').value.trim();
+    const pass = document.getElementById('password').value.trim();
+
+    if (user !== 'admin') {
+      document.getElementById('loginError').innerText = "The user must be 'admin'";
+      return;
+    }
+
+    const isValid = validatePassword(pass);
+
+    if (isValid) {
+      document.getElementById('loginView').classList.add('hidden');
+      document.getElementById('mainView').classList.remove('hidden');
+      showTab('users');
+    } else {
+      document.getElementById('loginError').innerText = "Insecure password. Must comply with all rules.";
+    }
+  }
+
+  function validatePassword(pass) {
+    const hasMinLength = pass.length >= 5;
+    const hasUppercase = /[A-Z]/.test(pass);
+    const hasLowercase = /[a-z]/.test(pass);
+    const hasNumber = /[0-9]/.test(pass);
+    
+    // Intencional BUG, the next validation is missing
+    // const hasSpecialChar = /[!@#\$%\^\&*\)\(+=._-]/.test(pass);
+
+    return hasMinLength && hasUppercase && hasLowercase && hasNumber;
+  }
+
+  function showTab(tab) {
+    document.getElementById('tab-users').classList.add('hidden');
+    document.getElementById('tab-roles').classList.add('hidden');
+    document.getElementById('tab-' + tab).classList.remove('hidden');
+    if (tab === 'users') updateUserSelects();
+  }
+
+  function createUser() {
+    const name = document.getElementById('newUserName').value.trim();
+    if (name) {
+      users.push({ name, roles: [] });
+      document.getElementById('newUserName').value = '';
+      renderUsers();
+      updateUserSelects();
+    }
+  }
+
+  function createRole() {
+    const role = document.getElementById('newRoleName').value.trim();
+    if (role && !roles.includes(role)) {
+      roles.push(role);
+      document.getElementById('newRoleName').value = '';
+      renderRoles();
+      updateRoleSelect();
+    }
+  }
+
+  function renderUsers() {
+    const tbody = document.getElementById('usersTable');
+    tbody.innerHTML = '';
+    users.forEach(user => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${user.name}</td><td>${user.roles.join(', ')}</td>`;
+      tbody.appendChild(tr);
+    });
+  }
+
+  function renderRoles() {
+    const list = document.getElementById('rolesList');
+    list.innerHTML = '';
+    roles.forEach(role => {
+      const li = document.createElement('li');
+      li.textContent = role;
+      list.appendChild(li);
+    });
+  }
+
+  function updateUserSelects() {
+    const userSelect = document.getElementById('userSelect');
+    userSelect.innerHTML = '';
+    users.forEach((user, i) => {
+      const option = document.createElement('option');
+      option.value = i;
+      option.textContent = user.name;
+      userSelect.appendChild(option);
+    });
+  }
+
+  function updateRoleSelect() {
+    const roleSelect = document.getElementById('roleSelect');
+    roleSelect.innerHTML = '';
+    roles.forEach(role => {
+      const option = document.createElement('option');
+      option.value = role;
+      option.textContent = role;
+      roleSelect.appendChild(option);
+    });
+  }
+
+  function assignRole() {
+    const userIndex = document.getElementById('userSelect').value;
+    const role = document.getElementById('roleSelect').value;
+    if (userIndex !== '' && role) {
+      users[userIndex].roles.push(role);
+      renderUsers();
+    }
+  }
+</script>
+
+</body>
+</html>
